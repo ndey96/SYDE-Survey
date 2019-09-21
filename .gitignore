@@ -1,0 +1,7 @@
+*.xlsx
+*.webloc
+*.pdf
+graphs/*
+*.rtf
+*.ipynb
+*.csv
