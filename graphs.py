@@ -282,6 +282,9 @@ line(
     title='Lecture Attendance',
     data=lecture_attendance_df)
 
+# for term in work_terms
+print(school_terms[:6])
+
 ####################################################
 # Part 2
 ####################################################
