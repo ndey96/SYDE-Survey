@@ -33,23 +33,6 @@ for term in terms:
         uppercase_school_terms.append(term.upper())
     uppercase_terms.append(term.upper())
 
-# def barh(col, fname, data=None):
-#     if data is None:
-#         data = df[col]
-
-#     total_count = len(data)
-#     plt.figure(figsize=(10, 8))
-#     sns.countplot(y=df[col])
-#     plt.gca().set_xticklabels([
-#         '{:.0f}%'.format(x * 100 / total_count) for x in plt.gca().get_xticks()
-#     ])
-#     plt.title(col)
-#     plt.xlabel('Percentage')
-#     # plt.figure().subplots_adjust(left=2)
-#     # plt.tight_layout()
-#     plt.savefig('graphs/' + fname + '_bar')
-#     plt.close()
-
 
 def barh(col, fname, data=None, bar_order=None):
     if data is None:
@@ -83,6 +66,7 @@ def boxplot(cols, fname, title, xlabels, ylabel):
     plt.ylabel(ylabel)
     plt.gca().set_xticklabels(xlabels)
     plt.title(title)
+    plt.xlabel('Term')
     plt.tight_layout()
     plt.savefig('graphs/' + fname + '_boxplot')
     plt.close()
@@ -126,11 +110,13 @@ def density(cols,
     plt.close()
 
 
-def line(y_col, fname, title, data):
+def line(y_col, fname, title, data, ylims=None):
     plt.figure(figsize=(10, 8))
-    sns.lineplot(x='Term', y=y_col, data=data)
+    sns.lineplot(x='Term', y=y_col, data=data, ci='sd')
     # plt.ylabel(ylabel)
     # plt.gca().set_xticklabels(xlabels)
+    if ylims:
+        plt.ylim(ylims)
     plt.title(title)
     plt.tight_layout()
     plt.savefig('graphs/' + fname + '_lineplot')
@@ -148,13 +134,30 @@ barh('What most closely describes your religious school of thought?',
      'religion')
 barh('What city did you grow up in?', 'home_town')
 barh('How would you describe your political leanings?', 'political')
-stress_qs = [term + 'How stressful was this term?' for term in terms]
+stress_qs = [term + 'How stressful was this term?' for term in school_terms]
 boxplot(
     stress_qs,
     'stress',
     'Stress',
     xlabels=uppercase_terms,
     ylabel='Stress Level (1-10)')
+stress_df = pd.DataFrame({'Term': [], 'Stress Level (1-10)': []})
+for term in school_terms:
+    responses = df[term + 'How stressful was this term?']
+    c = Counter(responses)
+    stress_df = stress_df.append(
+        pd.DataFrame({
+            'Term': [term.upper()] * len(responses),
+            'Stress Level (1-10)': responses
+        }),
+        ignore_index=True)
+line(
+    y_col='Stress Level (1-10)',
+    fname='stress',
+    title='Stress',
+    ylims=None,
+    data=stress_df)
+
 political_labels = ['Left'] + [''] * 5 + ['Right']
 density(
     cols='How would you describe your political leanings?',
@@ -280,11 +283,50 @@ line(
     y_col='Percentage of Lectures Attended',
     fname='lecture_attendance',
     title='Lecture Attendance',
+    ylims=(0, 100),
     data=lecture_attendance_df)
 
-# for term in work_terms
-print(school_terms[:6])
+employment_rate_df = pd.DataFrame({'Term': [], 'Employment Rate': []})
+for term in school_terms[:6]:
+    responses = df[term + 'Did you find a co-op job this term?']
+    c = Counter(responses)
+    employment_rate_df = employment_rate_df.append(
+        {
+            'Term': term.upper(),
+            'Employment Rate': c['Yes'] / len(responses)
+        },
+        ignore_index=True)
+line(
+    y_col='Employment Rate',
+    fname='employment_rate',
+    title='Employment Rate',
+    ylims=(0.95, 1.01),
+    data=employment_rate_df)
 
+rent_qs = [
+    term +
+    'How much did you pay for rent? Format as amount, currency, rate. For example: 600, CAD, monthly'
+    for term in terms
+]
+boxplot(
+    rent_qs, 'rent', 'Rent', xlabels=uppercase_terms, ylabel='Rent (CAD/month)')
+
+commute_qs = []
+for term in terms:
+    location = 'school'
+    if 'c' in term:
+        location = 'work'
+    commute_qs.append(
+        term + 'How long was your commute to ' + location + ' in minutes?')
+boxplot(
+    commute_qs,
+    'commute',
+    'Commute',
+    xlabels=uppercase_terms,
+    ylabel='Commute Time (Minutes)')
+
+print(df['1acHow did you find this job?'].unique())
 ####################################################
 # Part 2
 ####################################################
+# df2 = pd.read_excel('part_2.xlsx')
