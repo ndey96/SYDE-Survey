@@ -55,7 +55,7 @@ def barh(col, fname, data=None, bar_order=None):
     if data is None:
         data = df[col]
     c = Counter(data)
-    bar_df = pd.DataFrame({'keys': c.keys(), 'vals': c.values()})
+    bar_df = pd.DataFrame({'keys': list(c.keys()), 'vals': list(c.values())})
     if bar_order:
         bar_df['ii'] = [bar_order.index(x) for x in bar_df['keys']]
         bar_df = bar_df.sort_values(by='ii', ascending=True)
@@ -76,11 +76,12 @@ def barh(col, fname, data=None, bar_order=None):
     plt.close()
 
 
-def boxplot(cols, fname, title, labels):
+def boxplot(cols, fname, title, xlabels, ylabel):
     boxplot_data = [df[col].dropna() for col in cols]
     plt.figure(figsize=(10, 8))
     sns.boxplot(data=boxplot_data)
-    plt.gca().set_xticklabels(labels)
+    plt.ylabel(ylabel)
+    plt.gca().set_xticklabels(xlabels)
     plt.title(title)
     plt.tight_layout()
     plt.savefig('graphs/' + fname + '_boxplot')
@@ -102,7 +103,6 @@ def density(cols,
         line_label = None
         if line_labels:
             line_label = line_labels[idx]
-        print(df[col].fillna(0))
         sns.distplot(
             df[col].fillna(0),
             hist=False,
@@ -126,104 +126,124 @@ def density(cols,
     plt.close()
 
 
+def line(y_col, fname, title, data):
+    plt.figure(figsize=(10, 8))
+    sns.lineplot(x='Term', y=y_col, data=data)
+    # plt.ylabel(ylabel)
+    # plt.gca().set_xticklabels(xlabels)
+    plt.title(title)
+    plt.tight_layout()
+    plt.savefig('graphs/' + fname + '_lineplot')
+    plt.close()
+
+
 # for col in df.columns:
 #     print(col)
 
-# barh('What gender do you identify with?', 'gender')
-# birth_years = [1991, 1992, 1994, 1995, 1996, 1997]
-# barh('What year were you born in?', 'birth_year', bar_order=birth_years)
-# barh('Which ethnic background(s) do you identify with?', 'ethnicity')
-# barh('What most closely describes your religious school of thought?',
-#      'religion')
-# barh('What city did you grow up in?', 'home_town')
-# barh('How would you describe your political leanings?', 'political')
-# stress_qs = [term + 'How stressful was this term?' for term in terms]
-# boxplot(stress_qs, 'stress', 'Stress', uppercase_terms)
-# political_labels = ['Left'] + [''] * 5 + ['Right']
-# density(
-#     cols='How would you describe your political leanings?',
-#     fname='political',
-#     title='Political Leaning',
-#     labels=political_labels,
-#     xlims=(1, 7))
-# density(
-#     'What was your entrance average from high-school (top 6 grades only)?',
-#     'hs_avg',
-#     'High School Entrance Average',
-#     xlims=(80, 100))
-# accelerated_programs = []
-# for el in df[
-#         'Which of the following accelerated programs, if any, did you graduate from?']:
-#     accelerated_programs += el.encode('utf-8').split(', ')
-# barh(
-#     'Which of the following accelerated programs, if any, did you graduate from?',
-#     'accelerated_programs', accelerated_programs)
-# hs_extras = []
-# for el in df[
-#         'Which of the following extracurricular activities did you do in high school, if any?']:
-#     el = el.replace(
-#         'Participate in a leadership program (SHAD, build a school in Africa)',
-#         'Leadership Program')
-#     hs_extras += el.encode('utf-8').split(', ')
-# barh(
-#     'Which of the following extracurricular activities did you do in high school, if any?',
-#     'hs_extras', hs_extras)
-# barh(
-#     'Before starting university, what industry did you see yourself working in?',
-#     'hs_industry')
-# faculties_applied_to = []
-# for el in df['What university faculties did you apply to?']:
-#     faculties_applied_to += el.encode('utf-8').split(', ')
-# barh('What university faculties did you apply to?', 'faculties_applied_to',
-#      faculties_applied_to)
-# incomes = [
-#     '$0 - 50k', '$50 - 100k', '$100 - 150k', '$150 - 200k', '$200 - 250k',
-#     '$250 - 300k', '$300k+', "Don't Know"
-# ]
-# incomes = [x.decode('utf-8') for x in incomes]
-# barh(
-#     "What was your parents' combined income at the time you entered university?",
-#     'household_income',
-#     bar_order=incomes)
+barh('What gender do you identify with?', 'gender')
+birth_years = [1991, 1992, 1994, 1995, 1996, 1997]
+barh('What year were you born in?', 'birth_year', bar_order=birth_years)
+barh('Which ethnic background(s) do you identify with?', 'ethnicity')
+barh('What most closely describes your religious school of thought?',
+     'religion')
+barh('What city did you grow up in?', 'home_town')
+barh('How would you describe your political leanings?', 'political')
+stress_qs = [term + 'How stressful was this term?' for term in terms]
+boxplot(
+    stress_qs,
+    'stress',
+    'Stress',
+    xlabels=uppercase_terms,
+    ylabel='Stress Level (1-10)')
+political_labels = ['Left'] + [''] * 5 + ['Right']
+density(
+    cols='How would you describe your political leanings?',
+    fname='political',
+    title='Political Leaning',
+    labels=political_labels,
+    xlims=(1, 7))
+density(
+    'What was your entrance average from high-school (top 6 grades only)?',
+    'hs_avg',
+    'High School Entrance Average',
+    xlims=(80, 100))
+accelerated_programs = []
+for el in df[
+        'Which of the following accelerated programs, if any, did you graduate from?']:
+    accelerated_programs += el.split(', ')
+barh(
+    'Which of the following accelerated programs, if any, did you graduate from?',
+    'accelerated_programs', accelerated_programs)
+hs_extras = []
+for el in df[
+        'Which of the following extracurricular activities did you do in high school, if any?']:
+    el = el.replace(
+        'Participate in a leadership program (SHAD, build a school in Africa)',
+        'Leadership Program')
+    hs_extras += el.split(', ')
+barh(
+    'Which of the following extracurricular activities did you do in high school, if any?',
+    'hs_extras', hs_extras)
+barh(
+    'Before starting university, what industry did you see yourself working in?',
+    'hs_industry')
+faculties_applied_to = []
+for el in df['What university faculties did you apply to?']:
+    faculties_applied_to += el.split(', ')
+barh('What university faculties did you apply to?', 'faculties_applied_to',
+     faculties_applied_to)
+incomes = [
+    '$0 - 50k', '$50 - 100k', '$100 - 150k', '$150 - 200k', '$200 - 250k',
+    '$250 - 300k', '$300k+', "Don't Know"
+]
+incomes = [x for x in incomes]
+barh(
+    "What was your parents' combined income at the time you entered university?",
+    'household_income',
+    bar_order=incomes)
 
-# term_avg_qs = [
-#     'What was your term average in ' + term.upper() + '?'
-#     for term in school_terms
-# ]
-# density(
-#     cols=term_avg_qs,
-#     fname='term_avg',
-#     title='Term Average',
-#     line_labels=[t.upper() for t in school_terms],
-#     labels=None,
-#     xlims=(40, 100),
-#     ylims=(0, 0.1))
+term_avg_qs = [
+    'What was your term average in ' + term.upper() + '?'
+    for term in school_terms
+]
+density(
+    cols=term_avg_qs,
+    fname='term_avg',
+    title='Term Average',
+    line_labels=[t.upper() for t in school_terms],
+    labels=None,
+    xlims=(40, 100),
+    ylims=(0, 0.1))
 
-# barh(
-#     'What is the highest level of education achieved by either of your parents?',
-#     'parent_education')
+barh(
+    'What is the highest level of education achieved by either of your parents?',
+    'parent_education')
 
-# barh('Have either of your parents studied/worked in a STEM-related field?',
-#      'parent_stem')
-# barh('Were either of your parents born in North America?',
-#      'parent_north_america')
-# barh(
-#     'Approximately how much of your total university expenses were funded by your family? ',
-#     'parent_tuition')
-# debt_savings_order = [
-#     'None', '0-5k', '5k-10k', '10-20k', '20-50k', '50k+', 'Prefer not to say'
-# ]
-# debt_savings_order.reverse()
-# debt_savings_order = [x.decode('utf-8') for x in debt_savings_order]
-# barh(
-#     'How much debt are you graduating with?',
-#     'debt',
-#     bar_order=debt_savings_order)
-# barh(
-#     'How much do you have in savings?', 'savings', bar_order=debt_savings_order)
-# barh(
-#     "Of your 5 closest friends you've made in university, how many are in SYDE?",
-#     'syde_friends')
+barh('Have either of your parents studied/worked in a STEM-related field?',
+     'parent_stem')
+barh('Were either of your parents born in North America?',
+     'parent_north_america')
+barh(
+    'Approximately how much of your total university expenses were funded by your family? ',
+    'parent_tuition')
+debt_savings_order = [
+    'None', '0-5k', '5k-10k', '10-20k', '20-50k', '50k+', 'Prefer not to say'
+]
+debt_savings_order.reverse()
+debt_savings_order = [x for x in debt_savings_order]
+barh(
+    'How much debt are you graduating with?',
+    'debt',
+    bar_order=debt_savings_order)
+barh(
+    'How much do you have in savings?', 'savings', bar_order=debt_savings_order)
+barh(
+    "Of your 5 closest friends you've made in university, how many are in SYDE?",
+    'syde_friends')
+lecture_attendance_df = pd.DataFrame({
+    'Term': [],
+    'Percentage of Lectures Attended': []
+})
 for term in school_terms:
     orig_vals = df[term + 'How often did you attend lectures this term?']
     new_vals = []
@@ -241,17 +261,27 @@ for term in school_terms:
         else:
             print(val)
     df[term + 'lecture_attendance'] = new_vals
+    lecture_attendance_df = lecture_attendance_df.append(
+        pd.DataFrame({
+            'Term': [term.upper()] * len(new_vals),
+            'Percentage of Lectures Attended': new_vals
+        }),
+        ignore_index=True)
 
 lecture_attendance_qs = [term + 'lecture_attendance' for term in school_terms]
-boxplot(lecture_attendance_qs, 'lecture_attendance', 'Lecture Attendance',
-        uppercase_school_terms)
-# print(df['1blecture_attendance'])
-# print(lecture_attendance_qs)
-# density(
-#     cols=lecture_attendance_qs,
-#     fname='lecture_attendance',
-#     title='Lecture Attendance',
-#     line_labels=[t.upper() for t in school_terms],
-#     labels=None,
-#     xlims=(0, 100),
-#     ylims=(0, 0.1))
+boxplot(
+    lecture_attendance_qs,
+    'lecture_attendance',
+    'Lecture Attendance',
+    xlabels=uppercase_school_terms,
+    ylabel='Percentage of Lectures Attended')
+
+line(
+    y_col='Percentage of Lectures Attended',
+    fname='lecture_attendance',
+    title='Lecture Attendance',
+    data=lecture_attendance_df)
+
+####################################################
+# Part 2
+####################################################
