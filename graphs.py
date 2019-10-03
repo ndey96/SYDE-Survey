@@ -25,13 +25,23 @@ school_terms = []
 work_terms = []
 uppercase_terms = []
 uppercase_school_terms = []
+uppercase_work_terms = []
+
 for term in terms:
     if 'c' in term:
         work_terms.append(term)
+        uppercase_work_terms.append(term.upper())
     else:
         school_terms.append(term)
         uppercase_school_terms.append(term.upper())
     uppercase_terms.append(term.upper())
+
+
+def get_unique_vals(qs):
+    unique_work_cities = []
+    for q in qs:
+        unique_work_cities += list(df[q])
+    return np.unique(unique_work_cities)
 
 
 def barh(col, fname, data=None, bar_order=None):
@@ -120,6 +130,18 @@ def line(y_col, fname, title, data, ylims=None):
     plt.title(title)
     plt.tight_layout()
     plt.savefig('graphs/' + fname + '_lineplot')
+    plt.close()
+
+
+def stacked_line(data, fname, title):
+    plt.figure(figsize=(10, 8))
+    plt.stackplot(
+        uppercase_work_terms, list(data.values()), labels=list(data.keys()))
+    plt.legend(loc='lower right')
+    # plt.ylabel(ylabel)
+    plt.title(title)
+    plt.tight_layout()
+    plt.savefig('graphs/' + fname + '_stacked_lineplot')
     plt.close()
 
 
@@ -325,8 +347,57 @@ boxplot(
     xlabels=uppercase_terms,
     ylabel='Commute Time (Minutes)')
 
-print(df['1acHow did you find this job?'].unique())
+original_job_search_methods = [
+    'Jobmine / Waterloo Works', 'External Application / Cold Applying',
+    'Networking', 'Referral', 'Returned to an old job', 'CECA',
+    'Facebook page: HH Job Listings', 'Previous offer'
+    'SYDE Department Reached out', 'Self-employed', 'nan',
+    'returned to old company for a new position'
+]
+job_search_methods = [
+    'Waterloo Works', 'Cold Applying', 'Networking/Referral',
+    'Previous Employer', 'Self-employed'
+]
+
+job_search_method_counts = {m: [] for m in job_search_methods}
+for term in work_terms:
+    c = Counter(df[term + 'How did you find this job?'])
+    temp_dict = {m: 0 for m in job_search_methods}
+    for key, val in c.items():
+        if key in ('Jobmine / Waterloo Works', 'CECA',
+                   'SYDE Department Reached out'):
+            temp_dict['Waterloo Works'] += val
+        elif key in ('Facebook page: HH Job Listings',
+                     'External Application / Cold Applying'):
+            temp_dict['Cold Applying'] += val
+        elif key in ('Previous offer', 'Networking', 'Referral'):
+            temp_dict['Networking/Referral'] += val
+        elif key in (
+                'returned to old company for a new position',
+                'Returned to an old job',
+        ):
+            temp_dict['Previous Employer'] += val
+        elif key == 'Self-employed':
+            temp_dict['Self-employed'] += val
+    for k, v in temp_dict.items():
+        job_search_method_counts[k].append(v)
+
+stacked_line(
+    data=job_search_method_counts,
+    fname='job_search_methods',
+    title='How did you find your job?')
+
+# print(get_unique_vals(
+#     [term + 'What was your job title?' for term in work_terms]))
+
+# print(get_unique_vals(
+#     [term + 'In which city did you work?' for term in work_terms]))
+
+print(get_unique_vals([
+    term + 'Which industry best describes the company you worked for?'
+    for term in work_terms
+]))
 ####################################################
 # Part 2
 ####################################################
-# df2 = pd.read_excel('part_2.xlsx')
+df2 = pd.read_excel('part_2.xlsx')
