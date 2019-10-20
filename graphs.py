@@ -62,6 +62,7 @@ def barh(col, fname, data=None, bar_order=None):
     labels = bar_df['keys']
     y_pos = np.arange(len(bar_df))
     plt.figure(figsize=(10, 8))
+    sns.set()
     plt.barh(y_pos, bar_df['vals'], align='center', color=sns.color_palette())
     plt.yticks(y_pos, labels)
     plt.gca().set_xticklabels(
@@ -76,6 +77,7 @@ def barh(col, fname, data=None, bar_order=None):
 def boxplot(cols, fname, title, xlabels, ylabel):
     boxplot_data = [df[col].dropna() for col in cols]
     plt.figure(figsize=(10, 8))
+    sns.set()
     sns.boxplot(data=boxplot_data)
     plt.ylabel(ylabel)
     plt.gca().set_xticklabels(xlabels)
@@ -96,6 +98,7 @@ def density(cols,
             line_labels=None,
             data=None):
     plt.figure(figsize=(10, 8))
+    sns.set()
     if type(cols) is not list:
         cols = [cols]
 
@@ -132,6 +135,7 @@ def density(cols,
 
 def line(y_col, fname, title, data, ylims=None):
     plt.figure(figsize=(10, 8))
+    sns.set()
     sns.lineplot(x='Term', y=y_col, data=data, ci='sd')
     # plt.ylabel(ylabel)
     # plt.gca().set_xticklabels(xlabels)
@@ -145,6 +149,7 @@ def line(y_col, fname, title, data, ylims=None):
 
 def stacked_line(data, fname, title):
     plt.figure(figsize=(10, 8))
+    sns.set()
     plt.stackplot(
         uppercase_work_terms, list(data.values()), labels=list(data.keys()))
     plt.legend(loc='lower right')
@@ -156,6 +161,7 @@ def stacked_line(data, fname, title):
 
 
 plt.figure(figsize=(10, 8))
+sns.set()
 plt.hist(df['Timestamp'], bins=20)
 plt.title('Timestamp')
 plt.tight_layout()
@@ -1235,7 +1241,7 @@ for el in df['TC Over 1 Year']:
 density(
     'TC Over 1 Year',
     fname='total_compensation',
-    title='Total Compensation over 1st year',
+    title='Total Annual Compensation',
     data=tc_data)
 # print(df['What is your base salary compensation?'].unique())
 # print(df['What is your equity compensation, if any?'].unique())
