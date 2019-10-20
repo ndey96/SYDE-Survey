@@ -5,6 +5,21 @@ import seaborn as sns
 from collections import Counter
 import re
 
+figsize = (12, 9)
+
+
+def apply_styling():
+    sns.set()
+    plt.rcParams.update({
+        'axes.titlesize': 24,
+        'axes.labelsize': 18,
+        'xtick.labelsize': 18,
+        'ytick.labelsize': 18,
+        'axes.titlepad': 20,
+        'axes.titlepad': 20
+    })
+
+
 df1 = pd.read_excel('part_1.xlsx')
 df2 = pd.read_excel('part_2.xlsx')
 df = pd.merge(df1, df2, left_index=True, right_index=True)
@@ -61,8 +76,8 @@ def barh(col, fname, data=None, bar_order=None):
 
     labels = bar_df['keys']
     y_pos = np.arange(len(bar_df))
-    plt.figure(figsize=(10, 8))
-    sns.set()
+    plt.figure(figsize=figsize)
+    apply_styling()
     plt.barh(y_pos, bar_df['vals'], align='center', color=sns.color_palette())
     plt.yticks(y_pos, labels)
     plt.gca().set_xticklabels(
@@ -76,8 +91,8 @@ def barh(col, fname, data=None, bar_order=None):
 
 def boxplot(cols, fname, title, xlabels, ylabel):
     boxplot_data = [df[col].dropna() for col in cols]
-    plt.figure(figsize=(10, 8))
-    sns.set()
+    plt.figure(figsize=figsize)
+    apply_styling()
     sns.boxplot(data=boxplot_data)
     plt.ylabel(ylabel)
     plt.gca().set_xticklabels(xlabels)
@@ -97,8 +112,8 @@ def density(cols,
             rug=True,
             line_labels=None,
             data=None):
-    plt.figure(figsize=(10, 8))
-    sns.set()
+    plt.figure(figsize=figsize)
+    apply_styling()
     if type(cols) is not list:
         cols = [cols]
 
@@ -134,8 +149,8 @@ def density(cols,
 
 
 def line(y_col, fname, title, data, ylims=None):
-    plt.figure(figsize=(10, 8))
-    sns.set()
+    plt.figure(figsize=figsize)
+    apply_styling()
     sns.lineplot(x='Term', y=y_col, data=data, ci='sd')
     # plt.ylabel(ylabel)
     # plt.gca().set_xticklabels(xlabels)
@@ -148,8 +163,8 @@ def line(y_col, fname, title, data, ylims=None):
 
 
 def stacked_line(data, fname, title):
-    plt.figure(figsize=(10, 8))
-    sns.set()
+    plt.figure(figsize=figsize)
+    apply_styling()
     plt.stackplot(
         uppercase_work_terms, list(data.values()), labels=list(data.keys()))
     plt.legend(loc='lower right')
@@ -160,8 +175,8 @@ def stacked_line(data, fname, title):
     plt.close()
 
 
-plt.figure(figsize=(10, 8))
-sns.set()
+plt.figure(figsize=figsize)
+apply_styling()
 plt.hist(df['Timestamp'], bins=20)
 plt.title('Timestamp')
 plt.tight_layout()
@@ -171,7 +186,13 @@ plt.close()
 barh('What gender do you identify with?', 'gender')
 birth_years = [1991, 1992, 1994, 1995, 1996, 1997]
 barh('What year were you born in?', 'birth_year', bar_order=birth_years)
-barh('Which ethnic background(s) do you identify with?', 'ethnicity')
+ethnic_data = []
+for el in df['Which ethnic background(s) do you identify with?']:
+    ethnic_data += el.split(', ')
+barh(
+    'Which ethnic background(s) do you identify with?',
+    'ethnicity',
+    data=ethnic_data)
 barh('What most closely describes your religious school of thought?',
      'religion')
 barh('What city did you grow up in?', 'home_town')
