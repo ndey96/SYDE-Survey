@@ -126,7 +126,7 @@ def density(cols,
         data = df[cols].fillna(0)
 
     for idx, col in enumerate(cols):
-        plot_params = {'rug': True}
+        plot_params = {'rug': False}
         line_label = None
         if line_labels:
             plot_params['label'] = line_labels[idx]
