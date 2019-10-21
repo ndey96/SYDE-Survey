@@ -16,7 +16,8 @@ def apply_styling():
         'xtick.labelsize': 18,
         'ytick.labelsize': 18,
         'axes.titlepad': 20,
-        'axes.titlepad': 20
+        'axes.titlepad': 20,
+        'legend.fontsize': 18
     })
 
 
@@ -62,7 +63,7 @@ def get_unique_vals(qs):
     return np.unique(unique_work_cities)
 
 
-def barh(col, fname, data=None, bar_order=None):
+def barh(col, fname, data=None, bar_order=None, title=None):
     if data is None:
         data = df[col]
     data = [x for x in data if not (type(x) == float and np.isnan(x))]
@@ -83,7 +84,10 @@ def barh(col, fname, data=None, bar_order=None):
     plt.gca().set_xticklabels(
         ['{:.0f}%'.format(x * 100 / len(data)) for x in plt.gca().get_xticks()])
     plt.xlabel('Percentage of Respondents')
-    plt.title(col)
+    if title:
+        plt.title(title)
+    else:
+        plt.title(col)
     plt.tight_layout()
     plt.savefig('graphs/' + fname + '_bar')
     plt.close()
@@ -106,10 +110,11 @@ def boxplot(cols, fname, title, xlabels, ylabel):
 def density(cols,
             fname,
             title,
+            hist=True,
+            bins=None,
             labels=None,
             xlims=None,
             ylims=None,
-            rug=True,
             line_labels=None,
             data=None):
     plt.figure(figsize=figsize)
@@ -119,30 +124,37 @@ def density(cols,
 
     if data is None:
         data = df[cols].fillna(0)
+
     for idx, col in enumerate(cols):
+        plot_params = {'rug': True}
         line_label = None
         if line_labels:
-            line_label = line_labels[idx]
+            plot_params['label'] = line_labels[idx]
         if len(cols) == 1:
             data = {col: data}
-        sns.distplot(
-            data[col],
-            hist=False,
-            kde=True,
-            kde_kws={
-                'shade': True,
-                'linewidth': 3
-            },
-            label=line_label,
-            rug=rug)
+        if hist:
+            plot_params['hist'] = True
+            plot_params['hist_kws'] = {'align': 'left'}
+            plot_params['kde'] = False
+            if bins is not None:
+                plot_params['bins'] = bins
+        else:
+            plot_params['hist'] = False
+            plot_params['kde'] = True
+            plot_params['kde_kws'] = {'shade': True, 'linewidth': 3}
+        sns.distplot(data[col], **plot_params)
     if xlims:
         plt.xlim(xlims)
     if ylims:
         plt.ylim(ylims)
     if labels:
         plt.gca().set_xticklabels(labels)
+    if hist and line_labels:
+        plt.legend()
+
     plt.ylabel('Proportion of Class')
     plt.xlabel(title)
+    plt.title(title)
     plt.tight_layout()
     plt.savefig('graphs/' + fname + '_density')
     plt.close()
@@ -195,19 +207,29 @@ barh(
     data=ethnic_data)
 barh('What most closely describes your religious school of thought?',
      'religion')
-barh('What city did you grow up in?', 'home_town')
-stress_qs = [term + 'How stressful was this term?' for term in school_terms]
+
+city_grow_up_data = []
+for el in df['What city did you grow up in?']:
+    if el == 'Waterloo':
+        city_grow_up_data.append('KW')
+    else:
+        city_grow_up_data.append(el)
+barh('What city did you grow up in?', 'home_town', data=city_grow_up_data)
+
+school_stress_qs = [
+    term + 'How stressful was this term?' for term in school_terms
+]
 boxplot(
-    stress_qs,
-    'stress',
+    school_stress_qs,
+    'school_stress',
     'Stress',
-    xlabels=uppercase_terms,
+    xlabels=uppercase_school_terms,
     ylabel='Stress Level (1-10)')
-stress_df = pd.DataFrame({'Term': [], 'Stress Level (1-10)': []})
+school_stress_df = pd.DataFrame({'Term': [], 'Stress Level (1-10)': []})
 for term in school_terms:
     responses = df[term + 'How stressful was this term?']
     c = Counter(responses)
-    stress_df = stress_df.append(
+    school_stress_df = school_stress_df.append(
         pd.DataFrame({
             'Term': [term.upper()] * len(responses),
             'Stress Level (1-10)': responses
@@ -215,18 +237,43 @@ for term in school_terms:
         ignore_index=True)
 line(
     y_col='Stress Level (1-10)',
-    fname='stress',
-    title='Stress',
+    fname='school_stress',
+    title='School Stress',
     ylims=None,
-    data=stress_df)
+    data=school_stress_df)
 
-political_labels = ['Left'] + [''] * 5 + ['Right']
+work_stress_qs = [term + 'How stressful was this term?' for term in work_terms]
+boxplot(
+    work_stress_qs,
+    'coop_stress',
+    'Co-op Stress',
+    xlabels=uppercase_work_terms,
+    ylabel='Stress Level (1-10)')
+work_stress_df = pd.DataFrame({'Term': [], 'Stress Level (1-10)': []})
+for term in work_terms:
+    responses = df[term + 'How stressful was this term?']
+    c = Counter(responses)
+    work_stress_df = work_stress_df.append(
+        pd.DataFrame({
+            'Term': [term.upper()] * len(responses),
+            'Stress Level (1-10)': responses
+        }),
+        ignore_index=True)
+line(
+    y_col='Stress Level (1-10)',
+    fname='coop_stress',
+    title='Co-op Stress',
+    ylims=None,
+    data=work_stress_df)
+
+political_labels = [' '] + ['Far Left'] + [''] * 5 + ['Far Right']
 density(
     cols='How would you describe your political leanings?',
     fname='political',
     title='Political Leaning',
     labels=political_labels,
-    xlims=(1, 7))
+    xlims=(0, 8),
+    bins=np.arange(1, 7 + 2, 1))
 density(
     'What was your entrance average from high-school (top 6 grades only)?',
     'hs_avg',
@@ -238,7 +285,9 @@ for el in df[
     accelerated_programs += el.split(', ')
 barh(
     'Which of the following accelerated programs, if any, did you graduate from?',
-    'accelerated_programs', accelerated_programs)
+    'accelerated_programs',
+    accelerated_programs,
+    title='Which accelerated programs did you graduate from?')
 hs_extras = []
 for el in df[
         'Which of the following extracurricular activities did you do in high school, if any?']:
@@ -248,15 +297,40 @@ for el in df[
     hs_extras += el.split(', ')
 barh(
     'Which of the following extracurricular activities did you do in high school, if any?',
-    'hs_extras', hs_extras)
+    'hs_extras',
+    hs_extras,
+    title='High school Extracurricular Activities')
+
+hs_industry_data = []
+for el in df[
+        'Before starting university, what industry did you see yourself working in?']:
+    if type(el) == float:  # NaN check
+        pass
+    elif 'Manufacturing' in el:
+        hs_industry_data.append('Manufacturing')
+    elif 'Software' in el:
+        hs_industry_data.append('Software')
+    elif 'Hardware' in el:
+        hs_industry_data.append('Hardware')
+    elif 'Tech/Design' in el:
+        hs_industry_data.append('Consulting')
+    else:
+        hs_industry_data.append(el)
 barh(
-    'Before starting university, what industry did you see yourself working in?',
-    'hs_industry')
+    'Before university, what industry did you see yourself working in?',
+    'hs_industry',
+    data=hs_industry_data,
+    title='Before university, what industry did you want to work in?')
+
 faculties_applied_to = []
 for el in df['What university faculties did you apply to?']:
     faculties_applied_to += el.split(', ')
-barh('What university faculties did you apply to?', 'faculties_applied_to',
-     faculties_applied_to)
+faculties_applied_to = [
+    fac for fac in faculties_applied_to if fac != 'Engineering'
+]
+
+barh('What other university faculties did you apply to?',
+     'faculties_applied_to', faculties_applied_to)
 incomes = [
     '$0 - 50k', '$50 - 100k', '$100 - 150k', '$150 - 200k', '$200 - 250k',
     '$250 - 300k', '$300k+', "Don't Know"
@@ -271,14 +345,6 @@ term_avg_qs = [
     'What was your term average in ' + term.upper() + '?'
     for term in school_terms
 ]
-density(
-    cols=term_avg_qs,
-    fname='term_avg',
-    title='Term Average',
-    line_labels=[t.upper() for t in school_terms],
-    labels=None,
-    xlims=(40, 100),
-    ylims=(0, 0.1))
 boxplot(
     term_avg_qs,
     fname='term_avg',
@@ -288,15 +354,24 @@ boxplot(
 
 barh(
     'What is the highest level of education achieved by either of your parents?',
-    'parent_education')
+    'parent_education',
+    title="Parents' highest level of education")
 
-barh('Have either of your parents studied/worked in a STEM-related field?',
-     'parent_stem')
+barh(
+    'Have either of your parents studied/worked in a STEM-related field?',
+    'parent_stem',
+    title='Have your parents worked in a STEM-related field?')
 barh('Were either of your parents born in North America?',
      'parent_north_america')
+
+parent_tuition_bar_order = [
+    '81 - 100%', '61 - 80%', '41 - 60%', '21 - 40%', '0 - 20%'
+]
 barh(
     'Approximately how much of your total university expenses were funded by your family? ',
-    'parent_tuition')
+    'parent_tuition',
+    title='How much of your university expenses were funded by your family?',
+    bar_order=parent_tuition_bar_order[::-1])
 debt_savings_order = [
     'None', '0-5k', '5k-10k', '10-20k', '20-50k', '50k+', 'Prefer not to say'
 ]
@@ -308,9 +383,12 @@ barh(
     bar_order=debt_savings_order)
 barh(
     'How much do you have in savings?', 'savings', bar_order=debt_savings_order)
-barh(
+density(
     "Of your 5 closest friends you've made in university, how many are in SYDE?",
-    'syde_friends')
+    title=
+    "Of your 5 closest friends you've made in university, how many are in SYDE?",
+    fname='syde_friends',
+    bins=np.arange(0, 5 + 2, 1))
 lecture_attendance_df = pd.DataFrame({
     'Term': [],
     'Percentage of Lectures Attended': []
@@ -367,7 +445,7 @@ for term in school_terms[:6]:
 line(
     y_col='Employment Rate',
     fname='employment_rate',
-    title='Employment Rate',
+    title='Co-op Employment Rate',
     ylims=(0.95, 1.01),
     data=employment_rate_df)
 
@@ -377,7 +455,11 @@ rent_qs = [
     for term in terms
 ]
 boxplot(
-    rent_qs, 'rent', 'Rent', xlabels=uppercase_terms, ylabel='Rent (CAD/month)')
+    rent_qs,
+    'rent',
+    'How much did you pay for rent each term?',
+    xlabels=uppercase_terms,
+    ylabel='Rent (CAD/month)')
 
 commute_qs = []
 for term in terms:
@@ -389,7 +471,7 @@ for term in terms:
 boxplot(
     commute_qs,
     'commute',
-    'Commute',
+    'Commute Time to School or Work',
     xlabels=uppercase_terms,
     ylabel='Commute Time (Minutes)')
 
@@ -450,11 +532,12 @@ barh(
     'syde_friends_variant',
     bar_order=syde_friends_variant_bar_order[::-1])
 
-syde_social_bar_order = [2, 3, 4, 6, 7, 8]
-barh(
+density(
     "Out of 8 academic terms, how many of them did you attend at least one student-organized SYDE social event?",
-    'syde_social',
-    bar_order=syde_social_bar_order[::-1])
+    fname='syde_social',
+    title='How many terms did you attend at least one SYDE event?',
+    xlims=(0, 9),
+    bins=np.arange(0, 8 + 2, 1))
 
 inter_gen_syde_activites = []
 for el in df[
@@ -465,7 +548,8 @@ for el in df[
 barh(
     "inter_gen_syde_activites",
     'inter_gen_syde_activites',
-    data=inter_gen_syde_activites)
+    data=inter_gen_syde_activites,
+    title='Inter-generational SYDE activities')
 
 upper_year_contacts = []
 for el in df['How many upper years are you still in contact with?']:
@@ -508,16 +592,21 @@ for el in df['Which, if any, do you plan on donating to as an alumni?']:
     if el in ('not sure', 'not sure yet') or 'Mostly undecided' in el:
         continue
     alum_donations += el.split(', ')
+for i, el in enumerate(alum_donations):
+    if el == 'Department of Systems Design Engineering':
+        alum_donations[i] = 'Systems Design Engineering'
 
 barh(
-    'Which, if any, do you plan on donating to as an alumni?',
+    'Which do you plan on donating to as an alumni?',
     'alum_donations',
     data=alum_donations)
 
 uni_extras = []
 for el in df['Did you do any of the following during university?']:
     uni_extras += el.split(', ')
-
+for i, el in enumerate(uni_extras):
+    if el == 'Participate in athletic competition at the university level (not intramurals)':
+        uni_extras[i] = 'Varsity Athletics'
 barh(
     'Did you do any of the following during university?',
     'uni_extras',
@@ -525,9 +614,20 @@ barh(
 
 barh(
     'Which of the following is the most important factor for you when considering a job/career?',
-    'career_factor')
+    fname='career_factor',
+    title='For your career, what do you care about most?')
 
-barh('What do you expect to be doing a year from now?', 'year_from_now')
+year_from_now_data = []
+for el in df['What do you expect to be doing a year from now?']:
+    if 'Working at a company' in el:
+        year_from_now_data.append('Working at a company')
+    else:
+        year_from_now_data.append(el)
+
+barh(
+    'What do you expect to be doing a year from now?',
+    'year_from_now',
+    data=year_from_now_data)
 
 future_industry_data = []
 for el in df[
@@ -571,7 +671,8 @@ barh(
         x for x in
         df['Will you be working for a company you previously worked for during one of your co-ops?']
         if str(x) != 'nan'
-    ])
+    ],
+    title='Will you be working for a company you interned at?')
 
 barh(
     'Of those leaving, do you plan to come back to Canada?',
@@ -610,24 +711,31 @@ for el in df['10 years from now, which industry do you hope to be working in?']:
         distant_future_industry_data.append(el)
 
 barh(
-    '10 years from now, which industry do you hope to be working in?',
+    'In 10 years, which industry do you hope to work in?',
     'distant_future_industry',
     data=distant_future_industry_data)
 
 barh(
     "10 years from now, how many people from our class do you think you'll be in touch with?",
     'distant_future_syde_friends',
-    bar_order=['10-15', '5-10', '1-5', 0])
+    bar_order=['10-15', '5-10', '1-5', 0],
+    title="In 10 years, how many 2019 SYDEs will you be in touch with?")
 
 distant_future_education_data = []
 for el in df[
         'In the next 10 years do you plan to pursue any of the following forms of higher education?']:
     distant_future_education_data += el.split(',')
+for i, el in enumerate(distant_future_education_data):
+    if 'MBA' in el:
+        distant_future_education_data[i] = 'MBA'
+    elif 'Assorted' in el:
+        distant_future_education_data[i] = 'Certifications'
 
 barh(
     'In the next 10 years do you plan to pursue any of the following forms of higher education?',
     'distant_future_education',
-    data=distant_future_education_data)
+    data=distant_future_education_data,
+    title='In 10 years do you plan to pursue any higher education?')
 
 marriage_age_data = [
     x for x in df[
@@ -638,7 +746,8 @@ density(
     'If you intend to get married, at what age do you expect to do so?',
     fname='marriage_age',
     title='If you intend to get married, at what age do you expect to do so?',
-    data=marriage_age_data)
+    data=marriage_age_data,
+    bins=np.arange(22, 30 + 2, 1))
 
 children_age_data = [
     x for x in df[
@@ -649,7 +758,8 @@ density(
     'If you intend to have children, at what age do you expect to do so?',
     fname='children_age',
     title='If you intend to have children, at what age do you expect to do so?',
-    data=children_age_data)
+    data=children_age_data,
+    bins=np.arange(27, 35 + 2, 1))
 
 barh('What sexuality do you identify with?', 'sexuality')
 
@@ -721,7 +831,8 @@ density(
     'How many relationships did you have during university?',
     title='How many relationships did you have during university?',
     fname='num_relationships',
-    xlims=(0, 6))
+    xlims=(-1, 6),
+    bins=np.arange(0, 5 + 2, 1))
 
 job_titles = [
     'Software', 'Product Management', 'Other', 'Analyst', 'Data Science',
@@ -922,7 +1033,8 @@ barh(
 density(
     'How many years did it take to finish your degree?',
     title='How many years did it take to finish your degree?',
-    fname='years_to_complete')
+    fname='years_to_complete',
+    bins=np.arange(5, 10 + 1, 1))
 
 barh(
     'When (if at all) did you go on exchange?',
@@ -1004,8 +1116,9 @@ density(
     fname='cooking',
     title='Cooking Ability',
     xlims=(0, 10),
-    line_labels=['before', 'after'],
-    labels=cooking_labels)
+    line_labels=['First Year', 'Final Year'],
+    labels=cooking_labels,
+    bins=None)
 
 fitness_labels = ['Couch Potato'] + [''] * 4 + ['Elite Athlete']
 density(
@@ -1015,9 +1128,10 @@ density(
     ],
     fname='fitness',
     title='Fitness Level',
-    xlims=(0, 10),
-    line_labels=['before', 'after'],
-    labels=fitness_labels)
+    xlims=(0, 11),
+    line_labels=['First Year', 'Final Year'],
+    labels=fitness_labels,
+    bins=np.arange(1, 10 + 2, 1))
 
 food_establishment_data = []
 for el in df[
@@ -1041,14 +1155,18 @@ barh('Does your job require you to relocate outside Canada?',
 barh('Where in the world would you like to settle down?', 'settle_down')
 
 drinking_smoking_map = {
-    'Never': 0,
-    'Once or twice a term': 1,
-    'Monthly': 2,
-    'Bi-weekly': 3,
-    'Weekly': 4,
-    '2-3 times/week': 5,
-    '4-7 times/week': 6,
+    'Never': 1,
+    'Once or twice a term': 2,
+    'Monthly': 3,
+    'Bi-weekly': 4,
+    'Weekly': 5,
+    '2-3 times/week': 6,
+    '4-7 times/week': 7,
 }
+drinking_smoking_labels = [
+    '', 'Never', 'Once a term', 'Monthly', 'Bi-weekly', 'Weekly', '2-3/week',
+    '4-7/week'
+]
 marijuana_data = {
     'In your FIRST year at school, on average how often did you consume marijuana?':
     [],
@@ -1073,10 +1191,11 @@ density(
     ],
     fname='marijuana',
     title='Marijuana Consumption',
-    xlims=(0, 6),
+    xlims=(0, 8),
     line_labels=['First Year', 'Final Year'],
-    labels=list(drinking_smoking_map.keys()),
-    data=marijuana_data)
+    labels=drinking_smoking_labels,
+    data=marijuana_data,
+    bins=np.arange(1, 7 + 2, 1))
 
 drinking_data = {
     'In your FIRST year at school, on average how often did you drink socially?':
@@ -1102,10 +1221,11 @@ density(
     ],
     fname='drinking',
     title='Alcohol Consumption',
-    xlims=(0, 6),
+    xlims=(0, 8),
     line_labels=['First Year', 'Final Year'],
-    labels=list(drinking_smoking_map.keys()),
-    data=drinking_data)
+    labels=drinking_smoking_labels,
+    data=drinking_data,
+    bins=np.arange(1, 7 + 2, 1))
 
 how_meet_partners_data = []
 for el in df['How did you meet your significant others?']:
@@ -1127,7 +1247,8 @@ density(
     title=
     'How much of your university career, in months, was spent in a relationship?',
     fname='total_relationship_months',
-    xlims=(0, 60))
+    # xlims=(None, 60),
+    bins=10)
 
 barh('Did you have sex before beginning university?', 'sex_before_uni')
 
@@ -1137,7 +1258,8 @@ density(
     'How many unique sexual partners have you had in university, if any?',
     fname='sexual_partners',
     title='How many unique sexual partners have you had in university, if any?',
-    xlims=(0, 40))
+    xlims=(-1, 31),
+    bins=np.arange(0, 30 + 2, 1))
 
 df['coop_mean_salary'] = df[[
     term +
@@ -1173,12 +1295,14 @@ density(
     'cumulative_average',
     fname='cumulative_average',
     title='Cumulative Average',
-    xlims=(40, 100))
+    xlims=(40, 100),
+    hist=False)
 
 density(
     'coop_mean_salary',
     fname='coop_mean_salary',
-    title='Mean Coop Salary (CAD/hour)')
+    title='Mean Coop Salary (CAD/hour)',
+    bins=10)
 
 cumulative_average_bins = []
 for avg in df['cumulative_average']:
@@ -1263,7 +1387,8 @@ density(
     'TC Over 1 Year',
     fname='total_compensation',
     title='Total Annual Compensation',
-    data=tc_data)
+    data=tc_data,
+    bins=10)
 # print(df['What is your base salary compensation?'].unique())
 # print(df['What is your equity compensation, if any?'].unique())
 # print(df['What is your signing and/or relocation bonus, if any?'].unique())
