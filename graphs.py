@@ -8,9 +8,9 @@ import re
 figsize = (12, 9)
 
 
-def apply_styling():
+def apply_styling(style_params=None):
     sns.set()
-    plt.rcParams.update({
+    params = {
         'axes.titlesize': 24,
         'axes.labelsize': 18,
         'xtick.labelsize': 18,
@@ -18,7 +18,10 @@ def apply_styling():
         'axes.titlepad': 20,
         'axes.titlepad': 20,
         'legend.fontsize': 18
-    })
+    }
+    if style_params:
+        params.update(style_params)
+    plt.rcParams.update(params)
 
 
 df1 = pd.read_excel('part_1.xlsx')
@@ -63,7 +66,7 @@ def get_unique_vals(qs):
     return np.unique(unique_work_cities)
 
 
-def barh(col, fname, data=None, bar_order=None, title=None):
+def barh(col, fname, data=None, bar_order=None, title=None, style_params=None):
     if data is None:
         data = df[col]
     data = [x for x in data if not (type(x) == float and np.isnan(x))]
@@ -78,7 +81,7 @@ def barh(col, fname, data=None, bar_order=None, title=None):
     labels = bar_df['keys']
     y_pos = np.arange(len(bar_df))
     plt.figure(figsize=figsize)
-    apply_styling()
+    apply_styling(style_params)
     plt.barh(y_pos, bar_df['vals'], align='center', color=sns.color_palette())
     plt.yticks(y_pos, labels)
     plt.gca().set_xticklabels(
@@ -152,7 +155,10 @@ def density(cols,
     if hist and line_labels:
         plt.legend()
 
-    plt.ylabel('Proportion of Class')
+    if hist:
+        plt.ylabel('Number of Respondents')
+    else:
+        plt.ylabel('Proportion of Respondents')
     plt.xlabel(title)
     plt.title(title)
     plt.tight_layout()
@@ -461,6 +467,30 @@ boxplot(
     xlabels=uppercase_terms,
     ylabel='Rent (CAD/month)')
 
+rent_qs = [
+    term +
+    'How much did you pay for rent? Format as amount, currency, rate. For example: 600, CAD, monthly'
+    for term in school_terms
+]
+boxplot(
+    rent_qs,
+    'school_rent',
+    'How much did you pay for rent each school term?',
+    xlabels=uppercase_school_terms,
+    ylabel='Rent (CAD/month)')
+
+rent_qs = [
+    term +
+    'How much did you pay for rent? Format as amount, currency, rate. For example: 600, CAD, monthly'
+    for term in work_terms
+]
+boxplot(
+    rent_qs,
+    'work_rent',
+    'How much did you pay for rent each work term?',
+    xlabels=uppercase_work_terms,
+    ylabel='Rent (CAD/month)')
+
 commute_qs = []
 for term in terms:
     location = 'school'
@@ -473,6 +503,34 @@ boxplot(
     'commute',
     'Commute Time to School or Work',
     xlabels=uppercase_terms,
+    ylabel='Commute Time (Minutes)')
+
+commute_qs = []
+for term in school_terms:
+    location = 'school'
+    if 'c' in term:
+        location = 'work'
+    commute_qs.append(
+        term + 'How long was your commute to ' + location + ' in minutes?')
+boxplot(
+    commute_qs,
+    'school_commute',
+    'How long was your commute to school?',
+    xlabels=uppercase_school_terms,
+    ylabel='Commute Time (Minutes)')
+
+commute_qs = []
+for term in work_terms:
+    location = 'school'
+    if 'c' in term:
+        location = 'work'
+    commute_qs.append(
+        term + 'How long was your commute to ' + location + ' in minutes?')
+boxplot(
+    commute_qs,
+    'work_commute',
+    'How long was your commute to work?',
+    xlabels=uppercase_work_terms,
     ylabel='Commute Time (Minutes)')
 
 original_job_search_methods = [
@@ -646,7 +704,8 @@ for el in df[
 barh(
     'Which industry best describes the company you will be working at?',
     'future_industry',
-    data=future_industry_data)
+    data=future_industry_data,
+    title='Which industry best describes your next company?')
 
 job_offer_dates = [
     x.replace(',', '')
@@ -770,7 +829,9 @@ for el in df[
 barh(
     'Which of the following recreational drugs did you try for the first time at university?',
     'drugs',
-    data=drug_data)
+    data=drug_data,
+    title='Which recreational drugs did you try for the first time?',
+)
 
 cheating_data = []
 for a in df['Have you ever engaged in any of the following?']:
@@ -784,7 +845,8 @@ cheating_data = [x for x in cheating_data if x != '']
 barh(
     'Have you ever engaged in any of the following?',
     'cheating',
-    data=cheating_data)
+    data=cheating_data,
+    title='Did you engage in any forms of cheating?')
 
 failing_data = []
 for el in df['Have you failed a course or term in SYDE?']:
@@ -798,10 +860,13 @@ mental_health_data = []
 for el in df[
         'Have you experienced or been diagnosed with any of the following mental health concerns?']:
     mental_health_data += el.split(', ')
+mental_health_data[mental_health_data.index(
+    'Impulse control and addiction disorders')] = 'Addictive disorder'
 barh(
     'Have you experienced or been diagnosed with any of the following mental health concerns?',
     'mental_health',
-    data=mental_health_data)
+    data=mental_health_data,
+    title='Have you experienced any mental health concerns?')
 
 depression_causes_data = []
 for el in df[
@@ -811,7 +876,8 @@ for el in df[
 barh(
     'With regards to anxiety and/or depression, what was the source(s) of distress?',
     'depression_causes',
-    data=depression_causes_data)
+    data=depression_causes_data,
+    title='What caused your anxiety and/or depression?')
 
 mental_health_support_data = []
 for el in df[
@@ -822,10 +888,14 @@ for el in df[
         mental_health_support_data.append('No, but wish that I did')
     else:
         mental_health_support_data += re.sub(r'\([^()]*\)', '', el).split(', ')
+for i, el in enumerate(mental_health_support_data):
+    if el == 'Professional support from non-university resources':
+        mental_health_support_data[i] = 'Professional support outside UW'
 barh(
     'Have you sought any of the following forms of mental health support?',
     'mental_health_support',
-    data=mental_health_support_data)
+    data=mental_health_support_data,
+    title='Have you sought any forms of mental health support?')
 
 density(
     'How many relationships did you have during university?',
@@ -1045,7 +1115,7 @@ barh(
     ])
 
 barh(
-    'If you went on exchange, what university did you attend?',
+    'What exchange university did you attend?',
     'exchange_uni',
     data=df['If you went on exchange, what university did you attend?']
     .dropna())
@@ -1079,15 +1149,22 @@ barh(
     'if_not_syde',
     data=if_not_syde_data)
 
+interesting_course_data = df[
+    'What the most interesting course you took?'].str.upper().tolist()
+interesting_course_data[interesting_course_data.index('SYDE348')] = 'SYDE 348'
+interesting_course_data[interesting_course_data.index('SYDE252')] = 'SYDE 252'
 barh(
     'What the most interesting course you took?',
     'interesting_course',
-    data=df['What the most interesting course you took?'].str.upper())
+    data=interesting_course_data)
 
+useful_course_data = df[
+    'What the most useful course you took?'].str.upper().tolist()
+useful_course_data[useful_course_data.index('SYDE348')] = 'SYDE 348'
 barh(
     'What the most useful course you took?',
     'useful_course',
-    data=df['What the most useful course you took?'].str.upper())
+    data=useful_course_data)
 
 cse_data = []
 for el in df['What CSEs did you take?']:
@@ -1096,7 +1173,13 @@ for el in df['What CSEs did you take?']:
         letters.append(
             course[:re.search('\d', course.replace(' ', '')).start()])
     cse_data += letters
-barh('What CSEs did you take?', 'cses', data=cse_data)
+barh(
+    'What CSEs did you take?',
+    'cses',
+    data=cse_data,
+    style_params={
+        'ytick.labelsize': 12,
+    })
 
 te_data = []
 for el in df['What TEs did you take?']:
@@ -1105,6 +1188,9 @@ for el in df['What TEs did you take?']:
         letters.append(
             course[:re.search('\d', course.replace(' ', '')).start()])
     te_data += letters
+
+te_data[te_data.index(' SYD')] = 'SYDE'
+
 barh('What TEs did you take?', 'tes', data=te_data)
 
 cooking_labels = ['PB&J all day'] + [''] * 4 + ['3 Michelin Stars']
@@ -1140,7 +1226,11 @@ for el in df[
 barh(
     'What was your favourite food establishment on/near campus?',
     'food_establishment',
-    data=food_establishment_data)
+    data=food_establishment_data,
+    title='What was your favourite restaurant?',
+    style_params={
+        'ytick.labelsize': 16,
+    })
 
 barh('What will be your job title?', 'future_job_title')
 
