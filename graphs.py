@@ -319,6 +319,18 @@ line(
     ylims=None,
     data=school_stress_df)
 
+tuition_costs = [7691, 7950, 7968, 8337, 8717, 8607, 9126, 9133]
+tuition_df = pd.DataFrame({
+    'Term': uppercase_school_terms,
+    'Tuition cost (CAD/term)': tuition_costs
+})
+line(
+    y_col='Tuition cost (CAD/term)',
+    fname='tuition',
+    title='Tuition cost by term',
+    ylims=None,
+    data=tuition_df)
+
 work_stress_qs = [term + 'How stressful was this term?' for term in work_terms]
 boxplot(
     work_stress_qs,
@@ -1278,6 +1290,16 @@ for el in df['What CSEs did you take?']:
         letters.append(
             course[:re.search('\d', course.replace(' ', '')).start()])
     cse_data += letters
+for idx, el in enumerate(cse_data):
+    if el == 'PSYC':
+        cse_data[idx] = 'PSYCH'
+    elif el == 'GNE':
+        cse_data[idx] = 'GENE'
+    elif el == ' PHI':
+        cse_data[idx] = 'PHIL'
+    elif el == 'FIN':
+        cse_data[idx] = 'KIN'
+
 barh(
     'What CSEs did you take?',
     'cses',
@@ -1298,8 +1320,10 @@ for el in df['What TEs did you take?']:
 for idx, el in enumerate(te_data):
     if el == ' SYD':
         te_data[idx] = 'SYDE'
-
-print(np.unique(te_data))
+    elif el == 'GNE':
+        te_data[idx] = 'GENE'
+    elif el in ('ACTSCI', 'ACSCI'):
+        te_data[idx] = 'ACTSC'
 
 barh('What TEs did you take?', 'tes', data=te_data, title='TE departments')
 
@@ -1354,9 +1378,9 @@ barh('Do you consider this city to be within your hometown / region?',
 barh('Does your job require you to relocate outside Canada?',
      'future_job_outside_canada')
 
-print(np.unique(
-    df['Does your job require you to relocate outside Canada?'].dropna(),
-    return_counts=True))
+# print(np.unique(
+#     df['Does your job require you to relocate outside Canada?'].dropna(),
+#     return_counts=True))
 
 barh('Where in the world would you like to settle down?', 'settle_down')
 
@@ -1868,3 +1892,50 @@ density(
     normed=True,
     colors=[sns.color_palette('bright')[0],
             sns.color_palette('bright')[6]])
+
+gender_vs_marriage_data = {}
+gender_vs_marriage_data['Male'] = df[df[
+    'What gender do you identify with?'] == 'Male'][
+        'If you intend to get married, at what age do you expect to do so?'].dropna(
+        ).tolist()
+gender_vs_marriage_data['Female'] = df[df[
+    'What gender do you identify with?'] == 'Female'][
+        'If you intend to get married, at what age do you expect to do so?'].dropna(
+        ).tolist()
+gender_vs_marriage_data['Female'].remove('Not anytime soon')
+density(
+    cols=['Male', 'Female'],
+    fname='gender_vs_marriage',
+    title='Expected marriage age separated by gender',
+    xlabel='Age',
+    data=gender_vs_marriage_data,
+    line_labels=['Male', 'Female'],
+    bins=np.arange(22, 30 + 2, 1),
+    normed=True,
+    colors=[sns.color_palette('bright')[0],
+            sns.color_palette('bright')[6]])
+
+gender_vs_children_data = {}
+gender_vs_children_data['Male'] = df[df[
+    'What gender do you identify with?'] == 'Male'][
+        'If you intend to have children, at what age do you expect to do so?'].dropna(
+        ).tolist()
+gender_vs_children_data['Female'] = df[df[
+    'What gender do you identify with?'] == 'Female'][
+        'If you intend to have children, at what age do you expect to do so?'].dropna(
+        ).tolist()
+gender_vs_children_data['Female'].remove('Not sure')
+density(
+    cols=['Male', 'Female'],
+    fname='gender_vs_children',
+    title='Expected age to have children separated by gender',
+    xlabel='Age',
+    data=gender_vs_children_data,
+    line_labels=['Male', 'Female'],
+    bins=np.arange(27, 35 + 2, 1),
+    normed=True,
+    colors=[sns.color_palette('bright')[0],
+            sns.color_palette('bright')[6]])
+
+# print(df['coop_mean_salary'].mean())
+# print(np.unique(df['What gender do you identify with?'], return_counts=True))
