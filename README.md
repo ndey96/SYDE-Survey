@@ -1,6 +1,6 @@
 # SYDE-Survey
 
-This repository contains all of the materials that @ifalluphill and I used to create the [SYDE 2019 Class Profile](http://ndey96.github.io/syde_2019_class_profile.pdf).
+This repository contains all of the materials that [Jason](https://github.com/iFallUpHill) and I used to create the [SYDE 2019 Class Profile](http://ndey96.github.io/syde_2019_class_profile.pdf).
 
 First we asked our class to fill out a two-part survey powered by Google Forms. The first part of the survey contains most of the questions. The second part of the survey contains the most sensitive questions to better protect the privacy of the respondents. If you would like to have a copy of the Google forms we used, send me an email at ndey96@gmail.com.
 
