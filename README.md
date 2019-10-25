@@ -6,8 +6,7 @@ First we asked our class to fill out a two-part survey powered by Google Forms. 
 
 Once your class fills out the forms, you can export the response data as a `.xlsx` file. The `graphs.py` file expects a files called `part_1.xlsx` and `part_2.xlsx`.
 
-To generate all of the graphs in the `graphs/` directory, run the following:
-`python graphs.py`
+To generate all of the graphs in the `graphs/` directory, run `python graphs.py`. Note: Python 3 is required.
 
 `clean.py` was used to perform some basic data cleaning.
 
